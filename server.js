@@ -1,59 +1,52 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const multer = require('multer'); // Für das Hochladen von Dateien
-const Tesseract = require('tesseract.js'); // Für OCR
+const multer = require('multer'); // Pentru încărcarea fișierelor
+const Tesseract = require('tesseract.js'); // Pentru OCR
 const path = require('path');
-const fs = require('fs'); // Für das Löschen von Dateien
+const fs = require('fs'); // Pentru ștergerea fișierelor
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const port = 1337;
+const port = 3000; // Schimbă portul de la 1337 la 3000
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json()); // Falls du JSON-Daten verarbeiten möchtest
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // Pentru procesarea datelor JSON
 app.use(express.static('public'));
 
-// Konfiguration für Multer (Datei-Uploads)
+// Configurare Multer (încărcare fișiere)
 const upload = multer({ dest: 'uploads/' });
 
-// Verbindung zur SQLite-Datenbank
+// Conectare la baza de date SQLite
 const db = new sqlite3.Database('./contracte.db', (err) => {
     if (err) {
-        console.error('Fehler beim Verbinden mit der Datenbank:', err.message);
+        console.error('Eroare la conectarea la baza de date:', err.message);
     } else {
-        console.log('Erfolgreich mit der SQLite-Datenbank verbunden.');
+        console.log('Conectat la baza de date SQLite.');
     }
 });
 
-// Funktion zum Bereinigen von Text
+// Funcție pentru curățarea textului
 function cleanText(text) {
     return text.replace(/[=]/g, '').trim();
 }
 
-// Route für die Hauptseite
+// Rută pentru pagina principală
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Route für das Hochladen und Verarbeiten von Bildern
-app.post('/upload', upload.single('image'), (req, res) => {
+// Rută pentru încărcarea și procesarea imaginilor
+app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).send('Keine Datei hochgeladen.');
+        return res.status(400).send('Niciun fișier încărcat.');
     }
     const imagePath = path.join(__dirname, req.file.path);
 
-    // OCR mit Tesseract.js
-    Tesseract.recognize(
-        imagePath,
-        'ron',
-        {
-            logger: (info) => console.log(info)
-        }
-    )
-    .then((result) => {
+    try {
+        // OCR cu Tesseract.js
+        const result = await Tesseract.recognize(imagePath, 'ron', { logger: (info) => console.log(info) });
         const text = result.data.text;
-        console.log('Extrahierter Text:', text);
+        console.log('Text extras:', text);
 
         const lines = text.split('\n').map((line) => line.trim()).filter((line) => line);
 
@@ -83,89 +76,61 @@ app.post('/upload', upload.single('image'), (req, res) => {
         `;
         db.run(query, [nume, prenume, cnp, adresa], function (err) {
             if (err) {
-                console.error('Fehler beim Einfügen der Daten in die Datenbank:', err.message);
-                res.status(500).send('Fehler beim Speichern der Daten.');
-            } else {
-                console.log('Daten erfolgreich in der Datenbank gespeichert.');
-                res.json({
-                    id: this.lastID,
-                    nume: nume,
-                    prenume: prenume,
-                    cnp: cnp,
-                    adresa: adresa
-                });
+                console.error('Eroare la inserarea datelor în baza de date:', err.message);
+                return res.status(500).send('Eroare la salvarea datelor.');
             }
+            console.log('Date salvate în baza de date.');
+            res.json({
+                id: this.lastID,
+                nume: nume,
+                prenume: prenume,
+                cnp: cnp,
+                adresa: adresa
+            });
         });
 
         fs.unlink(imagePath, (err) => {
             if (err) {
-                console.error('Fehler beim Löschen der Datei:', err);
+                console.error('Eroare la ștergerea fișierului:', err);
             } else {
-                console.log('Hochgeladene Datei gelöscht:', imagePath);
+                console.log('Fișier încărcat șters:', imagePath);
             }
         });
-    })
-    .catch((error) => {
-        console.error('Fehler bei der OCR-Verarbeitung:', error);
+    } catch (error) {
+        console.error('Eroare la procesarea OCR:', error);
         fs.unlink(imagePath, (err) => {
             if (err) {
-                console.error('Fehler beim Löschen der Datei:', err);
+                console.error('Eroare la ștergerea fișierului:', err);
             }
         });
-        res.status(500).send('Fehler bei der Verarbeitung des Bildes.');
-    });
+        res.status(500).send('Eroare la procesarea imaginii.');
+    }
 });
 
-// Route für das Abrufen der gespeicherten Daten
-app.get('/contracte', (req, res) => {
+// Rută pentru obținerea datelor salvate în format JSON
+app.get('/api/contracte', (req, res) => {
     const query = 'SELECT * FROM contracte';
     db.all(query, [], (err, rows) => {
         if (err) {
-            console.error('Fehler beim Abrufen der Daten aus der Datenbank:', err.message);
-            res.status(500).send('Fehler beim Abrufen der Daten.');
-        } else {
-            let html = `
-                <h1>Gespeicherte Daten</h1>
-                <table border="1" cellpadding="5" cellspacing="0">
-                    <tr>
-                        <th>ID</th>
-                        <th>Timestamp</th>
-                        <th>Nume</th>
-                        <th>Prenume</th>
-                        <th>CNP</th>
-                        <th>Adresă</th>
-                    </tr>
-            `;
-            rows.forEach((row) => {
-                html += `
-                    <tr>
-                        <td>${row.id}</td>
-                        <td>${row.timestamp}</td>
-                        <td>${row.nume}</td>
-                        <td>${row.prenume}</td>
-                        <td>${row.cnp}</td>
-                        <td>${row.adresa}</td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            res.send(html);
+            console.error('Eroare la obținerea datelor din baza de date:', err.message);
+            return res.status(500).send('Eroare la obținerea datelor.');
         }
+        res.json(rows);
     });
 });
 
-// Server starten
+// Pornirea serverului
 app.listen(port, () => {
-    console.log('Server läuft unter http://localhost:' + port);
+    console.log(`Serverul rulează la http://localhost:${port}`);
 });
 
-// Datenbankverbindung schließen, wenn der Prozess beendet wird
+// Închiderea conexiunii la baza de date la închiderea procesului
 process.on('SIGINT', () => {
     db.close((err) => {
         if (err) {
-            console.error('Fehler beim Schließen der Datenbank:', err.message);
+            console.error('Eroare la închiderea bazei de date:', err.message);
         } else {
-            console.log('Datenbankverbindung geschlossen.');
+            console.log('Conexiunea la baza de date închisă.');
         }
         process.exit(0);
     });
