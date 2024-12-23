@@ -1,43 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
+    <meta name="description" content="Web site created using create-react-app" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
+    <title>Contract</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f7ff;
+            margin: 0;
+            padding: 20px;
+        }
+        form {
+            background-color: #f7f7f7;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 450px;
+            margin: 20px auto;
+        }
+        input[type="text"], input[type="email"], input[type="file"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        canvas {
+            border: 1px solid #000;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px; /* Add margin for spacing between buttons */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .row label {
+            margin-right: 10px;
+        }
+        .row select {
+            flex: 1;
+        }
+        .signature-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <div id="root">
+        <h1 style="text-align: center;">Contract</h1>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        <!-- Button Container for Navigation -->
+        <div class="button-container">
+            <button onclick="window.location.href='/sign-contract.html'">Sign new contract</button>
+            <button onclick="window.location.href='/contracte'">Contracte</button>
+        </div>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+        <!-- Form for uploading an image -->
+        <form id="uploadForm" enctype="multipart/form-data">
+            <h2>Scanați actul de identitate</h2>
+            <label for="image">Încărcați o imagine:</label>
+            <input type="file" id="image" name="image" accept="image/png, image/jpeg" required />
+            <button type="button" id="processImage">Procesează imaginea</button>
+        </form>
+
+        <!-- Form for filling in the fields -->
+        <form id="dataForm">
+            <h2>Completați formularul</h2>
+            <label for="input1">Nume:</label>
+            <input type="text" id="input1" name="input1" placeholder="Introduceți numele" required />
+            <label for="input2">Prenume:</label>
+            <input type="text" id="input2" name="input2" placeholder="Introduceți prenumele" required />
+            <label for="input3">CNP:</label>
+            <input type="text" id="input3" name="input3" placeholder="Introduceți CNP-ul" required />
+            <label for="input4">Adresă:</label>
+            <input type="text" id="input4" name="input4" placeholder="Introduceți adresa" required />
+            <label for="email">Adresă de email:</label>
+            <input type="email" id="email" name="email" placeholder="Introduceți adresa de email" required />
+            <div class="row">
+                <label for="combobox">Capacitate:</label>
+                <select id="combobox" name="combobox" required>
+                    <option value="mic">Mic</option>
+                    <option value="mare">Mare</option>
+                </select>
+                <label for="numarPersoane" style="margin-left: 10px;">Nr. Persoane:</label>
+                <input type="number" id="numarPersoane" name="numarPersoane" placeholder="Nr. persoane" required />
+            </div>
+            <label for="sumaLunara">Suma de plată lunară:</label>
+            <input type="text" id="sumaLunara" name="sumaLunara" placeholder="Suma calculată" readonly />
+            <label>Semnătură:</label>
+            <div class="signature-container">
+                <canvas id="signatureCanvas" width="300" height="150"></canvas>
+                <button type="button" onclick="clearCanvas()">Șterge Semnătura</button>
+            </div>
+            <input type="hidden" id="signatureData" name="signatureData" />
+            <button type="submit" onclick="saveSignature()">Trimite</button>
+        </form>
+
+        <!-- Table for displaying saved data -->
+        <h2>Date salvate</h2>
+        <div id="data-container">
+            <!-- Table will be dynamically generated -->
+        </div>
+    </div>
+    <script>
+        // Process the uploaded image
+        document.getElementById('processImage').addEventListener('click', async () => {
+            const uploadForm = document.getElementById('uploadForm');
+            const formData = new FormData(uploadForm);
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) {
+                    throw new Error('Eroare la procesarea imaginii.');
+                }
+                const data = await response.json();
+                document.getElementById('input1').value = data.nume || '';
+                document.getElementById('input2').value = data.prenume || '';
+                document.getElementById('input3').value = data.cnp || '';
+                document.getElementById('input4').value = data.adresa || '';
+            } catch (error) {
+                console.error('Eroare:', error);
+                alert('A apărut o problemă la procesarea imaginii.');
+            }
+        });
+
+        // Canvas logic
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveSignature() {
+            const signatureData = canvas.toDataURL('image/png');
+            document.getElementById('signatureData').value = signatureData;
+        }
+
+        // Fetch saved data
+        async function fetchSavedData() {
+            try {
+                const response = await fetch('/contracte');
+                if (!response.ok) {
+                    throw new Error('Eroare la încărcarea datelor salvate.');
+                }
+                const data = await response.json();
+                const container = document.getElementById('data-container');
+                let html = '<table><tr><th>ID</th><th>Nume</th><th>Prenume</th><th>CNP</th><th>Adresă</th></tr>';
+                data.forEach(contract => {
+                    html += `<tr>
+                        <td>${contract.id}</td>
+                        <td>${contract.nume}</td>
+                        <td>${contract.prenume}</td>
+                        <td>${contract.cnp}</td>
+                        <td>${contract.adresa}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Eroare:', error);
+            }
+        }
+
+        // Load saved data on page load
+        fetchSavedData();
+    </script>
+</body>
 </html>
